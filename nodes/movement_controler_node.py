@@ -25,18 +25,19 @@ class MovementController:
     def __init__(self):
         self._client = actionlib.SimpleActionClient('/move_base', MoveBaseAction)
         self._client.wait_for_server()
-        self._labyrinth_explorer = Subscriber('/explorer_goal_pos', MoveBaseGoal, labyrinth_explorer_callback)
+        self._labyrinth_explorer = rospy.Subscriber('/explorer_goal_pos', MoveBaseGoal, self.labyrinth_explorer_callback)
         self._status = 'mapping'
         self._current_goal_msg = None
         while self._current_goal_msg is None:
-            time.wait(2)
+            time.sleep(2)
 
-    def labyrinth_explorer_callback(data):
+    def labyrinth_explorer_callback(self, data):
         self._current_goal_msg = data
 
     def control_loop(self):
+        print 'movment_controler start loop'
         while not rospy.is_shutdown():
-            if _status == 'mapping':
+            if self._status == 'mapping':
                 self._client.send_goal(self._current_goal_msg)
 
 
@@ -45,8 +46,8 @@ def main():
         settings = termios.tcgetattr(sys.stdin)
     rospy.init_node('movement_controler')
     try:
-        MovementController()
-        self.control_loop()
+        mc = MovementController()
+        mc.control_loop()
     except Exception as e:
         print e
         traceback.print_exc()
