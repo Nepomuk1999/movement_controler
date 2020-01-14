@@ -17,28 +17,26 @@ if os.name == 'nt':
 else:
     import termios
 
-GOAL_MIN_DIST_TO_WALL = 5
-
-
 class MovementController:
 
     def __init__(self):
-        self._client = actionlib.SimpleActionClient('/move_base', MoveBaseAction)
-        self._client.wait_for_server()
-        self._labyrinth_explorer = rospy.Subscriber('/explorer_goal_pos', MoveBaseGoal, self.labyrinth_explorer_callback)
+        self._move_base_client = actionlib.SimpleActionClient('/move_base', MoveBaseAction)
+        self._move_base_client.wait_for_server()
+
+        self._labyrinth_explorer_clint = actionlib.SimpleActionClient('/explorer_goal_pos', MoveBaseGoal)
+        self._labyrinth_explorer_clint.wait_for_server()
+        # self._labyrinth_explorer = rospy.Subscriber('/explorer_goal_pos', MoveBaseGoal, self.labyrinth_explorer_callback)
         self._status = 'mapping'
         self._current_goal_msg = None
-        while self._current_goal_msg is None:
-            time.sleep(2)
-
-    def labyrinth_explorer_callback(self, data):
-        self._current_goal_msg = data
 
     def control_loop(self):
         print 'movment_controler start loop'
         while not rospy.is_shutdown():
             if self._status == 'mapping':
-                self._client.send_goal(self._current_goal_msg)
+                self._labyrinth_explorer_clint.send_goal()
+                self._labyrinth_explorer_clint.wait_for_result()
+                self._current_goal_msg = self._labyrinth_explorer_clint.get_result()
+                self._move_base_client.send_goal(self._current_goal_msg)
 
 
 def main():
